@@ -13,12 +13,24 @@ app = FastAPI(title="Purple Grace Store")
 
 @app.get("/")
 def home():
-    return {"message": "Database and server are successfully linked!"}
+    return {"message": "Welcome to Purple Grace Store!"}
 
 # Read all products
 @app.get("/products", response_model=List[schemas.ProductResponse])
 def get_products(db:Session = Depends(get_db)):
     products = db.query(models.Product).all()
+    return products
+
+# Get product by searching the name
+@app.get("/products/search", response_model=List[schemas.ProductResponse])
+def search_products(name: str, db: Session = Depends(get_db)):
+    products = db.query(models.Product).filter(
+        models.Product.name.ilike(f"%{name}%")
+    ).all()
+
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+
     return products
 
 # Create a product
@@ -31,7 +43,7 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
     return new_product
 
 # Get a single product
-@app.get("/producrs/{product_id}", response_model=schemas.ProductResponse)
+@app.get("/products/{product_id}", response_model=schemas.ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
 
@@ -39,18 +51,6 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
 
     return product
-
-# Get product by searching the name
-@app.get("products/search", response_model=List[schemas.ProductResponse])
-def search_products(name: str, db: Session = Depends(get_db)):
-    products = db.query(models.Product).filter(
-        models.Product.name.ilike(f"%{name}%")
-    ).all()
-
-    if not products:
-        raise HTTPException(status_code=404, detail="No products found")
-
-    return products
 
 # Update existing products
 @app.put("/products/{product_id}", response_model=schemas.ProductResponse)
@@ -68,7 +68,7 @@ def update_product(product_id: int, updated: schemas.ProductCreate, db: Session 
     return product
 
 # Remove products
-@app.get("products/{product_id}")
+@app.delete("/products/{product_id}")
 def delete_product(product_id: int, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
 
