@@ -52,3 +52,17 @@ def search_products(name: str, db: Session = Depends(get_db)):
 
     return products
 
+# Update existing products
+@app.put("/products/{product_id}", response_model=schemas.ProductResponse)
+def update_product(product_id: int, updated: schemas.ProductCreate, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    for key, value in updated.model_dump().items():
+        setattr(product, key, value)
+
+    db.commit()
+    db.refresh(product)
+    return product
