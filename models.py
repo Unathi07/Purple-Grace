@@ -10,3 +10,4 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
+    category = Column(String, nullable=True)
