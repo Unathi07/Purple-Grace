@@ -1,0 +1,14 @@
+.venv/
+venv/
+
+*.db
+
+.idea/
+
+__pyache__/
+*.pyc
+*.pyo
+
+.env
+
+test.db
