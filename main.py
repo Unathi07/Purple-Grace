@@ -40,4 +40,15 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
     return product
 
-# Get product by name
+# Get product by searching the name
+@app.get("products/search", response_model=List[schemas.ProductResponse])
+def search_products(name: str, db: Session = Depends(get_db)):
+    products = db.query(models.Product).filter(
+        models.Product.name.ilike(f"%{name}%")
+    ).all()
+
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+
+    return products
+
