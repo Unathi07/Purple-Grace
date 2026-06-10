@@ -27,6 +27,33 @@ def search_products(name: str, db: Session = Depends(get_db)):
 
     return products
 
+# Filter by category and/or price
+@app.get("/products/filter", response_model=List[schemas.ProductResponse])
+def filter_products(
+    category: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(models.Product)
+
+    if category:
+        query = query.filter(models.Product.category.ilike(f"%{category}%"))
+
+    if min_price is not None:
+        query = query.filter(models.Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(models.Product.price <= max_price)
+
+    products = query.all()
+
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+
+    return products
+
+
 # Read all products
 @app.get("/products", response_model=List[schemas.ProductResponse])
 def get_products(db:Session = Depends(get_db)):
@@ -78,29 +105,3 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return {"message": f"Product {product_id} deleted successfully"}
-
-# Filter by category and/or price
-@app.get("/products/filter", response_model=List[schemas.ProductResponse])
-def filter_products(
-    category: str | None = None,
-    min_price: float | None = None,
-    max_price: float | None = None,
-    db: Session = Depends(get_db)
-):
-    query = db.query(models.Product)
-
-    if category:
-        query = query.filter(models.Product.category.ilike(f"%{category}%"))
-
-    if min_price is not None:
-        query = query.filter(models.Product.price >= min_price)
-
-    if max_price is not None:
-        query = query.filter(models.Product.price <= max_price)
-
-    products = query.all()
-
-    if not products:
-        raise HTTPException(status_code=404, detail="No products found")
-
-    return products

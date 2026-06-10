@@ -112,3 +112,18 @@ def test_delete_product():
     # Confirm it's actually gone
     response = client.get(f"/products/{product_id}")
     assert response.status_code == 404
+
+def test_filter_products():
+    client.post("/products", json={
+        "name": "Lavender Soap",
+        "price": 30.00,
+        "stock": 10,
+        "category": "soap"
+    })
+
+    response = client.get("/products/filter?category=soap")
+    assert response.status_code == 200
+    assert any(p["category"] == "soap" for p in response.json())
+
+    response = client.get("/products/filter?min_price=20&max_price=50")
+    assert response.status_code == 200
