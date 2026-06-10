@@ -66,3 +66,15 @@ def update_product(product_id: int, updated: schemas.ProductCreate, db: Session 
     db.commit()
     db.refresh(product)
     return product
+
+# Remove products
+@app.get("products/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    db.delete(product)
+    db.commit()
+    return {"message": f"Product {product_id} deleted successfully"}
