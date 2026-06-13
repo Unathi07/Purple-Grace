@@ -11,3 +11,11 @@ class Product(Base):
     stock = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
     category = Column(String, nullable=True)
+
+class User(Base):
+    __tablename__ = "Users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unigue=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
