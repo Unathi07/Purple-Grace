@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from typing import List
 
 # Products
 class ProductCreate(BaseModel):
@@ -33,11 +34,31 @@ class CartItemCreate(BaseModel):
     product_id: int
     quantity: int=1
 
-class CartItemResponse(CartItemCreate):
+class CartItemResponse(BaseModel):
     user_id: int
     id: int
     product_id: int
     quantity: int
+    model_config = {"from_attributes": True}
+
+class OrderItemResponse(BaseModel):
+    """Shape of a single item inside an order"""
+    id: int
+    product_id: int
+    quantity: int
+    price: float
+
+    model_config = {"from_attributes": True}
+
+
+class OrderResponse(BaseModel):
+    """Shape of a full order"""
+    id: int
+    user_id: int
+    status: str
+    created_at: str
+    items: List[OrderItemResponse] = []
+
     model_config = {"from_attributes": True}
 
 

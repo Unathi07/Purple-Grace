@@ -157,7 +157,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     token = auth.create_access_token(data={"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
-# Cart 
+# Cart
 
 # Add item to cart
 @app.post("/cart", response_model=schemas.CartItemResponse)
@@ -226,3 +226,97 @@ def remove_from_cart(
     db.delete(item)
     db.commit()
     return {"message": "Item removed from cart"}
+
+# Orders 
+
+# Checkout — converts cart into an order
+@app.post("/orders", response_model=schemas.OrderResponse)
+def checkout(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Get the user's cart
+    cart_items = db.query(models.CartItem).filter(
+        models.CartItem.user_id == current_user.id
+    ).all()
+
+    if not cart_items:
+        raise HTTPException(status_code=400, detail="Your cart is empty")
+
+    # Create the order
+    from datetime import datetime, timezone
+    order = models.Order(
+        user_id=current_user.id,
+        status="pending",
+        created_at=datetime.now(timezone.utc).isoformat()
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    # Convert each cart item into an order item
+    order_items = []
+    for cart_item in cart_items:
+        product = db.query(models.Product).filter(
+            models.Product.id == cart_item.product_id
+        ).first()
+
+        order_item = models.OrderItem(
+            order_id=order.id,
+            product_id=cart_item.product_id,
+            quantity=cart_item.quantity,
+            price=product.price   # snapshot the price at checkout
+        )
+        db.add(order_item)
+        order_items.append(order_item)
+
+    # Clear the cart
+    for cart_item in cart_items:
+        db.delete(cart_item)
+
+    db.commit()
+
+    # Attach items to the order for the response
+    order.items = order_items
+    return order
+
+
+# View order history
+@app.get("/orders", response_model=List[schemas.OrderResponse])
+def get_orders(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    orders = db.query(models.Order).filter(
+        models.Order.user_id == current_user.id
+    ).all()
+
+    # Attach items to each order
+    for order in orders:
+        order.items = db.query(models.OrderItem).filter(
+            models.OrderItem.order_id == order.id
+        ).all()
+
+    return orders
+
+
+# Get a single order
+@app.get("/orders/{order_id}", response_model=schemas.OrderResponse)
+def get_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    order = db.query(models.Order).filter(
+        models.Order.id == order_id,
+        models.Order.user_id == current_user.id  # can only see your own orders
+    ).first()
+
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    order.items = db.query(models.OrderItem).filter(
+        models.OrderItem.order_id == order.id
+    ).all()
+
+    return order

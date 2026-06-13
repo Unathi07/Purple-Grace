@@ -299,3 +299,117 @@ def test_add_nonexistent_product_to_cart():
     }, headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 404
+
+# ── Order Tests ───────────────────────────────────────────────────────────────
+
+def get_auth_token_orders():
+    """Helper — registers a unique user for order tests and returns their token"""
+    client.post("/register", json={
+        "email": "orderuser@example.com",
+        "password": "password123"
+    })
+    response = client.post("/login", data={
+        "username": "orderuser@example.com",
+        "password": "password123"
+    })
+    return response.json()["access_token"]
+
+
+def test_checkout():
+    token = get_auth_token_orders()
+
+    # Create a product
+    product = client.post("/products", json={
+        "name": "Order Candle",
+        "price": 49.99,
+        "stock": 10
+    }).json()
+
+    # Add it to cart
+    client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 2
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    # Checkout
+    response = client.post("/orders", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "pending"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["quantity"] == 2
+    assert data["items"][0]["price"] == 49.99
+
+
+def test_checkout_empty_cart():
+    """Checking out with an empty cart should fail"""
+    token = get_auth_token_orders()
+
+    response = client.post("/orders", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Your cart is empty"
+
+
+def test_checkout_clears_cart():
+    """After checkout the cart should be empty"""
+    token = get_auth_token_orders()
+
+    product = client.post("/products", json={
+        "name": "Clearable Candle",
+        "price": 25.00,
+        "stock": 5
+    }).json()
+
+    client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 1
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    # Checkout
+    client.post("/orders", headers={"Authorization": f"Bearer {token}"})
+
+    # Cart should now be empty
+    cart = client.get("/cart", headers={"Authorization": f"Bearer {token}"}).json()
+    assert cart == []
+
+
+def test_get_orders():
+    token = get_auth_token_orders()
+
+    response = client.get("/orders", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_get_single_order():
+    token = get_auth_token_orders()
+
+    product = client.post("/products", json={
+        "name": "Single Order Candle",
+        "price": 35.00,
+        "stock": 5
+    }).json()
+
+    client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 1
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    order = client.post("/orders", headers={"Authorization": f"Bearer {token}"}).json()
+
+    response = client.get(f"/orders/{order['id']}", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["id"] == order["id"]
+
+
+def test_get_order_not_found():
+    token = get_auth_token_orders()
+
+    response = client.get("/orders/99999", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 404
+
+
+def test_orders_unauthenticated():
+    """Should fail without a token"""
+    response = client.get("/orders")
+    assert response.status_code == 401

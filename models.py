@@ -24,6 +24,24 @@ class CartItem(Base):
     __tablename__ = "CartItems"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)      
+    user_id = Column(Integer, nullable=False)
     product_id = Column(Integer, nullable=False)
     quantity = Column(Integer, default=1)
+
+class Order(Base):
+    __tablename__ = "Orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    status = Column(String, default="pending")
+    created_at = Column(String, nullable=False)
+
+
+class OrderItem(Base):
+    __tablename__ = "OrderItems"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, nullable=False)   
+    product_id = Column(Integer, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)
