@@ -16,6 +16,14 @@ class User(Base):
     __tablename__ = "Users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unigue=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+
+class CartItem(Base):
+    __tablename__ = "CartItems"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)      
+    product_id = Column(Integer, nullable=False)
+    quantity = Column(Integer, default=1)

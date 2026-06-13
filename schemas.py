@@ -18,8 +18,6 @@ class ProductResponse(ProductCreate):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    is_active: bool
-    model_config={"from_attributes": True}
 
 class UserResponse(BaseModel):
     id: int
@@ -30,4 +28,18 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class CartItemCreate(BaseModel):
+    product_id: int
+    quantity: int=1
+
+class CartItemResponse(CartItemCreate):
+    user_id: int
+    id: int
+    product_id: int
+    quantity: int
+    model_config = {"from_attributes": True}
+
+
+
 

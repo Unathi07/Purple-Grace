@@ -127,3 +127,175 @@ def test_filter_products():
 
     response = client.get("/products/filter?min_price=20&max_price=50")
     assert response.status_code == 200
+
+# Auth Tests
+
+def test_register():
+    response = client.post("/register", json={
+        "email": "test@example.com",
+        "password": "password123"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == "test@example.com"
+    assert "id" in data
+    assert "hashed_password" not in data  # password must never be returned
+
+def test_register_duplicate_email():
+    # Register once
+    client.post("/register", json={
+        "email": "duplicate@example.com",
+        "password": "password123"
+    })
+    # Try to register again with same email
+    response = client.post("/register", json={
+        "email": "duplicate@example.com",
+        "password": "password123"
+    })
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Email already registered"
+
+def test_login():
+    # Register first
+    client.post("/register", json={
+        "email": "login@example.com",
+        "password": "password123"
+    })
+    # Then login
+    response = client.post("/login", data={
+        "username": "login@example.com",
+        "password": "password123"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+
+def test_login_wrong_password():
+    client.post("/register", json={
+        "email": "wrongpass@example.com",
+        "password": "correctpassword"
+    })
+    response = client.post("/login", data={
+        "username": "wrongpass@example.com",
+        "password": "wrongpassword"
+    })
+    assert response.status_code == 401
+
+def test_login_nonexistent_user():
+    response = client.post("/login", data={
+        "username": "nobody@example.com",
+        "password": "password123"
+    })
+    assert response.status_code == 401
+
+# Cart Tests
+
+def get_auth_token():
+    """Helper function — registers a user and returns their JWT token"""
+    client.post("/register", json={
+        "email": "cartuser@example.com",
+        "password": "password123"
+    })
+    response = client.post("/login", data={
+        "username": "cartuser@example.com",
+        "password": "password123"
+    })
+    return response.json()["access_token"]
+
+
+def test_add_to_cart():
+    token = get_auth_token()
+
+    # Create a product first
+    product = client.post("/products", json={
+        "name": "Cart Candle",
+        "price": 49.99,
+        "stock": 10
+    }).json()
+
+    response = client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 2
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["product_id"] == product["id"]
+    assert data["quantity"] == 2
+
+
+def test_add_same_product_increases_quantity():
+    token = get_auth_token()
+
+    product = client.post("/products", json={
+        "name": "Double Candle",
+        "price": 49.99,
+        "stock": 10
+    }).json()
+
+    # Add once
+    client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 1
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    # Add again
+    response = client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 2
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    assert response.json()["quantity"] == 3   # 1 + 2
+
+
+def test_get_cart():
+    token = get_auth_token()
+
+    response = client.get("/cart", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_remove_from_cart():
+    token = get_auth_token()
+
+    product = client.post("/products", json={
+        "name": "Removable Candle",
+        "price": 49.99,
+        "stock": 10
+    }).json()
+
+    # Add to cart
+    cart_item = client.post("/cart", json={
+        "product_id": product["id"],
+        "quantity": 1
+    }, headers={"Authorization": f"Bearer {token}"}).json()
+
+    # Remove it
+    response = client.delete(
+        f"/cart/{cart_item['id']}",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+
+
+def test_add_to_cart_unauthenticated():
+    """Should fail without a token"""
+    response = client.post("/cart", json={
+        "product_id": 1,
+        "quantity": 1
+    })
+    assert response.status_code == 401
+
+
+def test_add_nonexistent_product_to_cart():
+    token = get_auth_token()
+
+    response = client.post("/cart", json={
+        "product_id": 99999,
+        "quantity": 1
+    }, headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 404
