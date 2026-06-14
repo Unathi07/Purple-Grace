@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purple Grace Store</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        <a href="/" class="logo">💜 Purple Grace</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/static/cart.html" id="cart-link">🛒 Cart</a>
+            <a href="/static/auth.html" id="auth-link">Login</a>
+            <a href="#" id="logout-link" style="display:none">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Search bar -->
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search for products...">
+        <button onclick="searchProducts()">Search</button>
+    </div>
+
+    <!-- Products -->
+    <div class="container">
+        <div id="message"></div>
+        <p class="section-title">All Products</p>
+        <div class="product-grid" id="product-grid">
+            <p>Loading products...</p>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000"
+
+        // Check if user is logged in
+        const token = localStorage.getItem("token")
+        if (token) {
+            document.getElementById("auth-link").style.display = "none"
+            document.getElementById("logout-link").style.display = "inline"
+        }
+
+        // Logout
+        document.getElementById("logout-link").onclick = () => {
+            localStorage.removeItem("token")
+            window.location.reload()
+        }
+
+        // Load all products on page load
+        async function loadProducts() {
+            const response = await fetch(`${API}/products`)
+            const products = await response.json()
+            displayProducts(products)
+        }
+
+        // Search products
+        async function searchProducts() {
+            const name = document.getElementById("search-input").value
+            if (!name) {
+                loadProducts()
+                return
+            }
+            const response = await fetch(`${API}/products/search?name=${name}`)
+            if (response.status === 404) {
+                displayProducts([])
+                return
+            }
+            const products = await response.json()
+            displayProducts(products)
+        }
+
+        // Display products in the grid
+        function displayProducts(products) {
+            const grid = document.getElementById("product-grid")
+            if (products.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <p>No products found</p>
+                    </div>`
+                return
+            }
+            grid.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <h3>${p.name}</h3>
+                    <p class="category">${p.category || "General"}</p>
+                    <p class="price">R${p.price.toFixed(2)}</p>
+                    <p class="stock">${p.stock} in stock</p>
+                    <button class="btn btn-primary" onclick="addToCart(${p.id})">
+                        Add to Cart
+                    </button>
+                </div>
+            `).join("")
+        }
+
+        // Add to cart
+        async function addToCart(productId) {
+            const token = localStorage.getItem("token")
+            if (!token) {
+                window.location.href = "/static/auth.html"
+                return
+            }
+            const response = await fetch(`${API}/cart`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ product_id: productId, quantity: 1 })
+            })
+            if (response.ok) {
+                showMessage("Added to cart! 🛒", "success")
+            } else {
+                showMessage("Something went wrong", "error")
+            }
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById("message")
+            msg.innerHTML = `<div class="message ${type}">${text}</div>`
+            setTimeout(() => msg.innerHTML = "", 3000)
+        }
+
+        // Search on Enter key
+        document.getElementById("search-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") searchProducts()
+        })
+
+        loadProducts()
+    </script>
+</body>
+</html>
