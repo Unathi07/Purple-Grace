@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product — Purple Grace Store</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .product-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .product-image-placeholder {
+            width: 100%;
+            height: 400px;
+            background: #f3e8ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+        }
+
+        .product-info h1 {
+            font-size: 1.8rem;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-info .category {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-info .price {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #6b21a8;
+            margin-bottom: 1rem;
+        }
+
+        .product-info .description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .product-info .stock {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 1.5rem;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quantity-selector label {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .quantity-selector input {
+            width: 70px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #6b21a8;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .product-detail {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="logo">💜 Purple Grace</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/static/cart.html">🛒 Cart</a>
+            <a href="/static/orders.html">📦 Orders</a>
+            <a href="/static/auth.html" id="auth-link">Login</a>
+            <a href="#" id="logout-link" style="display:none">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <a href="/" class="back-link">← Back to products</a>
+        <div id="message"></div>
+        <div id="product-detail"></div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000"
+        const token = localStorage.getItem("token")
+
+        // Update nav based on login state
+        if (token) {
+            document.getElementById("auth-link").style.display = "none"
+            document.getElementById("logout-link").style.display = "inline"
+        }
+
+        document.getElementById("logout-link").onclick = () => {
+            localStorage.removeItem("token")
+            window.location.reload()
+        }
+
+        // Get product ID from URL
+        // URL will look like: /static/product.html?id=3
+        const params = new URLSearchParams(window.location.search)
+        const productId = params.get("id")
+
+        if (!productId) {
+            window.location.href = "/"
+        }
+
+        async function loadProduct() {
+            const response = await fetch(`${API}/products/${productId}`)
+
+            if (!response.ok) {
+                document.getElementById("product-detail").innerHTML = `
+                    <div class="empty-state">
+                        <p>Product not found</p>
+                        <a href="/" class="btn btn-primary"
+                            style="display:inline-block;width:auto;text-decoration:none">
+                            Back to Store
+                        </a>
+                    </div>`
+                return
+            }
+
+            const p = await response.json()
+
+            document.title = `${p.name} — Purple Grace Store`
+
+            document.getElementById("product-detail").innerHTML = `
+                <div class="product-detail">
+                    <div>
+                        ${p.image_url
+                            ? `<img src="${p.image_url}" alt="${p.name}" class="product-image">`
+                            : `<div class="product-image-placeholder">💜</div>`
+                        }
+                    </div>
+                    <div class="product-info">
+                        <h1>${p.name}</h1>
+                        <p class="category">${p.category || "General"}</p>
+                        <p class="price">R${p.price.toFixed(2)}</p>
+                        <p class="description">${p.description || "No description available."}</p>
+                        <p class="stock">${p.stock > 0
+                            ? `✅ ${p.stock} in stock`
+                            : "❌ Out of stock"
+                        }</p>
+                        <div class="quantity-selector">
+                            <label>Quantity:</label>
+                            <input type="number" id="quantity" value="1" min="1" max="${p.stock}">
+                        </div>
+                        <button
+                            class="btn btn-primary"
+                            style="width:auto;padding:0.75rem 2rem;font-size:1rem"
+                            onclick="addToCart(${p.id})"
+                            ${p.stock === 0 ? "disabled" : ""}
+                        >
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>`
+        }
+
+        async function addToCart(productId) {
+            if (!token) {
+                window.location.href = "/static/auth.html"
+                return
+            }
+
+            const quantity = parseInt(document.getElementById("quantity").value)
+
+            const response = await fetch(`${API}/cart`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ product_id: productId, quantity })
+            })
+
+            if (response.ok) {
+                showMessage("Added to cart! 🛒", "success")
+            } else {
+                showMessage("Something went wrong", "error")
+            }
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById("message")
+            msg.innerHTML = `<div class="message ${type}">${text}</div>`
+            setTimeout(() => msg.innerHTML = "", 3000)
+        }
+
+        loadProduct()
+    </script>
+</body>
+</html>

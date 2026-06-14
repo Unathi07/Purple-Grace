@@ -94,13 +94,20 @@ function displayProducts(products) {
             <p class="category">${p.category || "General"}</p>
             <p class="price">R${p.price.toFixed(2)}</p>
             <p class="stock">${p.stock} in stock</p>
-            <button class="btn btn-primary" onclick="addToCart(${p.id})">
-                Add to Cart
-            </button>
+            <div style="display:flex;gap:0.5rem">
+                <a href="/static/product.html?id=${p.id}"
+                    class="btn btn-secondary"
+                    style="text-decoration:none;text-align:center;flex:1">
+                    View
+                </a>
+                <button class="btn btn-primary" style="flex:1"
+                    onclick="addToCart(${p.id})">
+                    Add to Cart
+                </button>
+            </div>
         </div>
     `).join("")
 }
-
         // Add to cart
         async function addToCart(productId) {
             const token = localStorage.getItem("token")
