@@ -8,21 +8,21 @@
 </head>
 <body>
 
-<nav>
-    <a href="/" class="logo">💜 Purple Grace</a>
-    <button class="hamburger" onclick="toggleMenu()" id="hamburger">
-        <span></span>
-        <span></span>
-        <span></span>
-    </button>
-    <div class="nav-links" id="nav-links">
-        <a href="/">Home</a>
-        <a href="/static/cart.html">🛒 Cart</a>
-        <a href="/static/orders.html">📦 Orders</a>
-        <a href="/static/auth.html" id="auth-link">Login</a>
-        <a href="#" id="logout-link" style="display:none">Logout</a>
-    </div>
-</nav>
+    <nav>
+        <a href="/" class="logo">💜 Purple Grace</a>
+        <button class="hamburger" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/">Home</a>
+            <a href="/static/cart.html">🛒 Cart</a>
+            <a href="/static/orders.html">📦 Orders</a>
+            <a href="/static/auth.html" id="auth-link">Login</a>
+            <a href="#" id="logout-link" style="display:none">Logout</a>
+        </div>
+    </nav>
 
     <div class="container">
         <div id="message"></div>
@@ -47,6 +47,10 @@
         document.getElementById("logout-link").onclick = () => {
             localStorage.removeItem("token")
             window.location.href = "/"
+        }
+
+        function toggleMenu() {
+            document.getElementById("nav-links").classList.toggle("open")
         }
 
         async function loadOrders() {
@@ -98,18 +102,42 @@
                             </div>
                         `).join("")}
                     </div>
-                    <div style="width:100%;text-align:right;font-weight:bold;font-size:1.1rem;color:#6b21a8">
-                        Total: R${order.items.reduce((sum, item) =>
-                            sum + (item.price * item.quantity), 0).toFixed(2)}
+                    <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-weight:bold;font-size:1.1rem;color:#6b21a8">
+                            Total: R${order.items.reduce((sum, item) =>
+                                sum + (item.price * item.quantity), 0).toFixed(2)}
+                        </span>
+                        ${order.status === "pending" ? `
+                            <button class="btn btn-secondary" style="width:auto"
+                                onclick="payOrder(${order.id})">
+                                Pay Now
+                            </button>
+                        ` : ""}
                     </div>
                 </div>
             `).join("")
         }
 
-        function toggleMenu() {
-    const links = document.getElementById("nav-links")
-    links.classList.toggle("open")
-}
+        async function payOrder(orderId) {
+            const response = await fetch(`${API}/payments/pay/${orderId}`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            if (response.redirected) {
+                window.location.href = response.url
+            } else if (response.ok) {
+                const data = await response.json()
+                window.location.href = data.url
+            } else {
+                showMessage("Payment failed to initiate", "error")
+            }
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById("message")
+            msg.innerHTML = `<div class="message ${type}">${text}</div>`
+            setTimeout(() => msg.innerHTML = "", 3000)
+        }
 
         loadOrders()
     </script>

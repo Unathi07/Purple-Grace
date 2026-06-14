@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful — Purple Grace Store</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="logo">💜 Purple Grace</a>
+        <button class="hamburger" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="/">Home</a>
+            <a href="/static/cart.html">🛒 Cart</a>
+            <a href="/static/orders.html">📦 Orders</a>
+        </div>
+    </nav>
+
+    <div class="container" style="text-align:center;padding-top:4rem">
+        <div style="font-size:5rem;margin-bottom:1rem">🎉</div>
+        <h1 style="color:#6b21a8;margin-bottom:1rem">Payment Successful!</h1>
+        <p style="color:#555;margin-bottom:2rem">
+            Thank you for your order. We'll get it ready for you soon.
+        </p>
+        <div style="display:flex;gap:1rem;justify-content:center">
+            <a href="/static/orders.html"
+                class="btn btn-primary"
+                style="text-decoration:none;width:auto;padding:0.75rem 2rem">
+                View My Orders
+            </a>
+            <a href="/"
+                class="btn btn-secondary"
+                style="text-decoration:none;width:auto;padding:0.75rem 2rem">
+                Continue Shopping
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById("nav-links").classList.toggle("open")
+        }
+    </script>
+</body>
+</html>
