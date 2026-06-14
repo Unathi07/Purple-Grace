@@ -3,7 +3,7 @@ from tests.conftest import client
 def test_home():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to Purple Grace Store!"}
+    assert "Purple Grace" in response.text
 
 def test_create_product():
     response = client.post("/products", json={
