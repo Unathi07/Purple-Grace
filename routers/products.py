@@ -2,8 +2,10 @@
 from typing import List
 
 # Third-party
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+import shutil
+import os
 
 # Local
 import models
@@ -78,3 +80,17 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return {"message": f"Product {product_id} deleted successfully"}
+
+@router.post("/upload-image")
+def upload_image(file: UploadFile = File(...)):
+    """Upload a product image and return its URL"""
+
+    # Make sure the images folder exists
+    os.makedirs("static/images", exist_ok=True)
+
+    # Save the file
+    file_path = f"static/images/{file.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {"image_url": f"/static/images/{file.filename}"}

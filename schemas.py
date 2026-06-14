@@ -8,6 +8,7 @@ class ProductCreate(BaseModel):
     price: float
     stock: int
     category: str | None=None
+    image_url: str | None = None
 
 class ProductResponse(ProductCreate):
     id: int

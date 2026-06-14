@@ -11,6 +11,7 @@ class Product(Base):
     stock = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
     category = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
 
 class User(Base):
     __tablename__ = "Users"
