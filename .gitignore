@@ -12,3 +12,5 @@ __pyache__/
 .env
 
 test.db
+
+sql_app.db
