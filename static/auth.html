@@ -8,13 +8,19 @@
 </head>
 <body>
 
-    <nav>
-        <a href="/" class="logo">💜 Purple Grace</a>
-        <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/static/cart.html">🛒 Cart</a>
-        </div>
-    </nav>
+<nav>
+    <a href="/" class="logo">💜 Purple Grace</a>
+    <button class="hamburger" onclick="toggleMenu()" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div class="nav-links" id="nav-links">
+        <a href="/">Home</a>
+        <a href="/static/cart.html">🛒 Cart</a>
+        <a href="/static/orders.html">📦 Orders</a>
+    </div>
+</nav>
 
     <div class="auth-container">
         <div id="message"></div>
@@ -114,6 +120,11 @@
             const msg = document.getElementById("message")
             msg.innerHTML = `<div class="message ${type}">${text}</div>`
         }
+
+        function toggleMenu() {
+    const links = document.getElementById("nav-links")
+    links.classList.toggle("open")
+}
     </script>
 </body>
 </html>

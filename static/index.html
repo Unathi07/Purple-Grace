@@ -11,7 +11,12 @@
     <!-- Navbar -->
 <nav>
     <a href="/" class="logo">💜 Purple Grace</a>
-    <div class="nav-links">
+    <button class="hamburger" onclick="toggleMenu()" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div class="nav-links" id="nav-links">
         <a href="/">Home</a>
         <a href="/static/cart.html">🛒 Cart</a>
         <a href="/static/orders.html">📦 Orders</a>
@@ -140,6 +145,11 @@ function displayProducts(products) {
         document.getElementById("search-input").addEventListener("keypress", (e) => {
             if (e.key === "Enter") searchProducts()
         })
+
+        function toggleMenu() {
+    const links = document.getElementById("nav-links")
+    links.classList.toggle("open")
+}
 
         loadProducts()
     </script>

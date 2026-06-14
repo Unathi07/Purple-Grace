@@ -69,13 +69,21 @@
 </head>
 <body>
 
-    <nav>
-        <a href="/" class="logo">💜 Purple Grace</a>
-        <div class="nav-links">
-            <a href="/">Store</a>
-            <a href="#" id="logout-link">Logout</a>
-        </div>
-    </nav>
+<nav>
+    <a href="/" class="logo">💜 Purple Grace</a>
+    <button class="hamburger" onclick="toggleMenu()" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div class="nav-links" id="nav-links">
+        <a href="/">Home</a>
+        <a href="/static/cart.html">🛒 Cart</a>
+        <a href="/static/orders.html">📦 Orders</a>
+        <a href="/static/auth.html" id="auth-link">Login</a>
+        <a href="#" id="logout-link" style="display:none">Logout</a>
+    </div>
+</nav>
 
     <!-- Login Screen -->
     <div id="login-screen">
@@ -264,6 +272,11 @@
             document.getElementById("admin-password").addEventListener("keypress", (e) => {
                 if (e.key === "Enter") adminLogin()
             })
+
+        function toggleMenu() {
+    const links = document.getElementById("nav-links")
+    links.classList.toggle("open")
+}
     </script>
 </body>
 </html>
