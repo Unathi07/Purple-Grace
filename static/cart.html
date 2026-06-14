@@ -2,9 +2,127 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart — Purple Grace Store</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
+    <nav>
+        <a href="/" class="logo">💜 Purple Grace</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/static/cart.html">🛒 Cart</a>
+            <a href="/static/orders.html">📦 Orders</a>
+            <a href="/static/auth.html" id="auth-link">Login</a>
+            <a href="#" id="logout-link" style="display:none">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="message"></div>
+        <p class="section-title">Your Cart</p>
+        <div id="cart-items"></div>
+        <div id="cart-total" style="display:none">
+            <div class="cart-total">
+                <h3>Total: R<span id="total-price">0.00</span></h3>
+                <button class="btn btn-secondary" onclick="checkout()">
+                    Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://127.0.0.1:8000"
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            window.location.href = "/static/auth.html"
+        }
+
+        if (token) {
+            document.getElementById("auth-link").style.display = "none"
+            document.getElementById("logout-link").style.display = "inline"
+        }
+
+        document.getElementById("logout-link").onclick = () => {
+            localStorage.removeItem("token")
+            window.location.href = "/"
+        }
+
+        async function loadCart() {
+            const response = await fetch(`${API}/cart`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            const items = await response.json()
+            const container = document.getElementById("cart-items")
+
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Your cart is empty</p>
+                        <a href="/" class="btn btn-primary"
+                            style="display:inline-block;width:auto;text-decoration:none">
+                            Continue Shopping
+                        </a>
+                    </div>`
+                return
+            }
+
+            let total = 0
+            const itemsHtml = await Promise.all(items.map(async item => {
+                const productRes = await fetch(`${API}/products/${item.product_id}`)
+                const product = await productRes.json()
+                const subtotal = product.price * item.quantity
+                total += subtotal
+                return `
+                    <div class="cart-item">
+                        <div class="item-info">
+                            <h3>${product.name}</h3>
+                            <p>Qty: ${item.quantity} × R${product.price.toFixed(2)}</p>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:1rem">
+                            <span class="item-price">R${subtotal.toFixed(2)}</span>
+                            <button class="btn btn-primary" style="width:auto"
+                                onclick="removeItem(${item.id})">Remove</button>
+                        </div>
+                    </div>`
+            }))
+
+            container.innerHTML = itemsHtml.join("")
+            document.getElementById("total-price").textContent = total.toFixed(2)
+            document.getElementById("cart-total").style.display = "block"
+        }
+
+        async function removeItem(itemId) {
+            await fetch(`${API}/cart/${itemId}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            loadCart()
+        }
+
+        async function checkout() {
+            const response = await fetch(`${API}/orders`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            if (response.ok) {
+                showMessage("Order placed successfully! 🎉", "success")
+                setTimeout(() => window.location.href = "/static/orders.html", 1500)
+            } else {
+                showMessage("Checkout failed", "error")
+            }
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById("message")
+            msg.innerHTML = `<div class="message ${type}">${text}</div>`
+            setTimeout(() => msg.innerHTML = "", 3000)
+        }
+
+        loadCart()
+    </script>
 </body>
 </html>

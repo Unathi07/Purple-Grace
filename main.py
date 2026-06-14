@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 # Local
 from database import engine
 import models
-from routers import products, auth, cart, orders
+from routers import products, auth, cart, orders, admin
 
 # Creates all database tables on startup
 models.Base.metadata.create_all(bind=engine)
@@ -24,6 +24,7 @@ app.include_router(products.router)
 app.include_router(auth.router)
 app.include_router(cart.router)
 app.include_router(orders.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def home():
